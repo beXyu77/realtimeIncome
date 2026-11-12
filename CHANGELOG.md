@@ -1,9 +1,9 @@
-# 产品开发记录 — V1.2
+# V1.3 更新日志
 
-- 基准：PRD V1.0 第二版、V1.1.1 每分钟更新版本。
-- 新增：厕所、摸鱼、学习的开始/结束/趣味弹窗/记录/本地备份。
-- 新增：`src/components/ActivityPanel.vue`、`src/utils/activityEngine.ts`。
-- 更新：`src/components/SalaryDashboard.vue`（接入活动模块与工作状态）、`src/App.vue`（底部版本显示）。
-- 未修改：`src/utils/salaryEngine.ts`（随包附带原版，保证结算使用完全相同的基本工资计算逻辑）。
-- 数据兼容：原工资设置 Key 不变；活动使用独立 `paid-fishing:activities:v1`。
-- 核验重点：午休/下班自动截止、精确到秒结算、状态切换、手机布局、隐私和多次点击防重复保存。
+- 新增 `scheduleEngine.ts`：根据用户作息生成当天工作、午休预警、午休开始/结束、冲刺、下班提醒（工作日生效）。
+- 新增 `SchedulePanel.vue`：网页内提醒、预览提醒、开关、本地保存、下班结算卡片。
+- `SalaryDashboard.vue` 接入面板，工资仍每个整分钟刷新。
+- `ActivityPanel.vue` 增加 records-change 事件以同步结算统计，**其模板与 V1.2.3 完全相同**。
+- `App.vue` 保持原配置流程，仅更新页脚版本信息。
+- 更新 `docs/PRD.md`：按用户要求移除带薪开会的开发范围。
+- 没有增加任何 npm 第三方依赖、网络接口、后台通知或支付逻辑。
