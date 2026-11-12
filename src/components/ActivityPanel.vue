@@ -10,7 +10,12 @@ import {
   readActivityStore,
   settleActivity,
 } from '../utils/activityEngine'
-import type { ActivityKind, ActivityRecord, ActiveActivity, ActivityStore } from '../utils/activityEngine'
+import type {
+  ActivityKind,
+  ActivityRecord,
+  ActiveActivity,
+  ActivityStore,
+} from '../utils/activityEngine'
 import type { PaySettings } from '../utils/salaryEngine'
 
 const props = defineProps<{ settings: PaySettings; clock: Date }>()
@@ -47,9 +52,11 @@ const messages: Record<ActivityKind, string[]> = {
   ],
 }
 
-const runningMinutes = computed(() => active.value
-  ? Math.max(0, Math.floor((props.clock.getTime() - active.value.startedAt) / 60_000))
-  : 0)
+const runningMinutes = computed(() =>
+  active.value
+    ? Math.max(0, Math.floor((props.clock.getTime() - active.value.startedAt) / 60_000))
+    : 0,
+)
 
 function localDateKey(date: Date): string {
   return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`
@@ -73,8 +80,16 @@ const todayStats = computed(() => {
   return totals
 })
 const recentRecords = computed(() => [...records.value].reverse().slice(0, 6))
-const cash = (num: number) => num.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-const dateTime = (time: number) => new Date(time).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false })
+const cash = (num: number) =>
+  num.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+const dateTime = (time: number) =>
+  new Date(time).toLocaleString('zh-CN', {
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  })
 
 function notifyActive() {
   emit('active-change', active.value?.kind ?? null)
@@ -135,9 +150,10 @@ function start(kind: ActivityKind) {
     error.value = '厕所与摸鱼仅能在正常工作时段开始；午休或下班后可使用学习模式（不计薪）。'
     return
   }
-  const id = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
-    ? crypto.randomUUID()
-    : `${now}-${Math.random().toString(36).slice(2)}`
+  const id =
+    typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+      ? crypto.randomUUID()
+      : `${now}-${Math.random().toString(36).slice(2)}`
   const next: ActiveActivity = {
     id,
     kind,
@@ -157,7 +173,8 @@ function finish() {
   const record = settleActivity(current, Date.now(), 'manual')
   if (commit({ version: 1, active: null, records: [...records.value, record] })) {
     const lines = messages[record.kind]
-    receiptMessage.value = lines[Math.floor(Math.random() * lines.length)] ?? '🎉 活动结束，记录已保存！'
+    receiptMessage.value =
+      lines[Math.floor(Math.random() * lines.length)] ?? '🎉 活动结束，记录已保存！'
     receipt.value = record
     notice.value = ''
   }
@@ -191,7 +208,11 @@ function resetDamagedStorage() {
 function exportRecords() {
   if (records.value.length === 0) return
   try {
-    const payload = JSON.stringify({ version: 1, exportedAt: new Date().toISOString(), records: records.value }, null, 2)
+    const payload = JSON.stringify(
+      { version: 1, exportedAt: new Date().toISOString(), records: records.value },
+      null,
+      2,
+    )
     const file = new Blob([payload], { type: 'application/json;charset=utf-8' })
     const url = URL.createObjectURL(file)
     const link = document.createElement('a')
@@ -206,13 +227,24 @@ function exportRecords() {
   }
 }
 function clearRecords() {
-  if (active.value) { error.value = '请先结束正在进行的活动。'; return }
+  if (active.value) {
+    error.value = '请先结束正在进行的活动。'
+    return
+  }
   if (!records.value.length) return
-  if (!window.confirm('确定清空所有已完成活动记录吗？建议先导出备份。此操作不可撤销，工资设置不受影响。')) return
+  if (
+    !window.confirm(
+      '确定清空所有已完成活动记录吗？建议先导出备份。此操作不可撤销，工资设置不受影响。',
+    )
+  )
+    return
   if (commit(emptyActivityStore())) notice.value = '活动记录已清空，工资设置已保留。'
 }
 
-watch(() => props.clock.getTime(), () => reconcile())
+watch(
+  () => props.clock.getTime(),
+  () => reconcile(),
+)
 onMounted(() => {
   loadStore()
   window.addEventListener('focus', reconcile)
@@ -229,81 +261,176 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <section class="space-y-4 rounded-2xl border border-[#DDEBDD] bg-[#FCFFFC] p-4 sm:p-5" aria-label="趣味活动记录">
-    <div class="flex flex-wrap items-center justify-between gap-2">
-      <div>
-        <h3 class="text-base font-bold text-[#305E45]">🐟 趣味活动</h3>
-        <p class="mt-1 text-xs text-[#809787]">工资主面板每分钟更新；活动结算精确到秒。</p>
-      </div>
-      <span class="rounded-full bg-[#EAF5ED] px-3 py-1 text-xs text-[#397F5E]">仅本地记录</span>
+  <section
+    class="space-y-4 rounded-2xl border border-[#DDEBDD] bg-[#FCFFFC] p-4 sm:p-5"
+    aria-label="趣味活动记录"
+  >
+    <!-- 标题和本地记录标签同一行，严格对齐参考图片 -->
+    <div class="flex items-center justify-between gap-3">
+      <h3 class="min-w-0 text-base font-bold text-[#305E45]">🐟 趣味活动</h3>
+      <span class="shrink-0 text-xs text-[#397F5E]">仅本地记录</span>
     </div>
 
-    <div class="flex flex-wrap items-center gap-3">
-      <div class="flex items-center gap-2" aria-label="选择活动">
+    <!-- 三个活动图标靠左；正在进行时，结束按钮靠右 -->
+    <div class="flex min-w-0 items-center justify-between gap-2">
+      <div class="flex min-w-0 items-center gap-2" aria-label="选择活动">
         <button
-          v-for="item in icons" :key="item.kind" type="button"
-          :title="item.hint" :aria-label="item.hint" :aria-pressed="active?.kind === item.kind"
+          v-for="item in icons"
+          :key="item.kind"
+          type="button"
+          :title="item.hint"
+          :aria-label="item.hint"
+          :aria-pressed="active?.kind === item.kind"
           :disabled="Boolean(active) || storageBlocked"
-          class="flex size-12 items-center justify-center rounded-xl border text-xl transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#297A5B] disabled:cursor-not-allowed disabled:opacity-45"
-          :class="active?.kind === item.kind ? 'border-[#348C65] bg-[#D9F0E2]' : 'border-[#D7E8DC] bg-[#EFF8F1] hover:bg-[#DFF2E5]'"
+          class="flex size-10 shrink-0 items-center justify-center rounded-xl border text-lg transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#297A5B] disabled:cursor-not-allowed disabled:opacity-45 sm:size-11 sm:text-xl"
+          :class="
+            active?.kind === item.kind
+              ? 'border-[#348C65] bg-[#D9F0E2]'
+              : 'border-[#D7E8DC] bg-[#EFF8F1] hover:bg-[#DFF2E5]'
+          "
           @click="start(item.kind)"
-        >{{ item.icon }}</button>
-      </div>
-      <div v-if="active" class="min-w-0 flex-1 space-y-1">
-        <p class="text-sm font-semibold text-[#327756]">{{ activityNames[active.kind] }}进行中</p>
-        <p class="text-xs text-[#7B9283]">已持续约 {{ runningMinutes }} 分钟</p>
+        >
+          {{ item.icon }}
+        </button>
       </div>
       <button
-        v-if="active" type="button" class="min-h-11 rounded-xl bg-[#A66C47] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#8C5735] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#A66C47]"
+        v-if="active"
+        type="button"
+        class="min-h-11 shrink-0 whitespace-nowrap rounded-xl bg-[#A66C47] px-3 py-2.5 text-sm font-semibold text-white hover:bg-[#8C5735] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#A66C47]"
         @click="finish"
-      >结束{{ activityNames[active.kind] }}</button>
+      >
+        结束{{ activityNames[active.kind] }}
+      </button>
+    </div>
+
+    <!-- 状态信息在按钮行下方，横排文字不受按钮挤压 -->
+    <div v-if="active" class="space-y-1">
+      <p class="text-sm font-semibold leading-5 text-[#327756]">
+        {{ activityNames[active.kind] }}进行中
+      </p>
+      <p class="text-xs leading-5 text-[#7B9283]">已持续约 {{ runningMinutes }} 分钟</p>
     </div>
 
     <p v-if="active" class="rounded-xl bg-[#FFF3E4] px-3 py-2 text-sm text-[#8A653F]">
-      {{ active.kind === 'toilet' ? '🚽 带薪拉屎中……公司的利润正在神秘流动。' : active.kind === 'fish' ? '🐟 人在工位坐，灵魂已经去海里游泳。' : '📖 技能树成长中……偷偷升级的感觉真不错。' }}
+      {{
+        active.kind === 'toilet'
+          ? '🚽 带薪拉屎中……公司的利润正在神秘流动。'
+          : active.kind === 'fish'
+            ? '🐟 人在工位坐，灵魂已经去海里游泳。'
+            : '📖 技能树成长中……偷偷升级的感觉真不错。'
+      }}
     </p>
-    <p v-if="notice" role="status" class="rounded-xl bg-[#EAF5ED] px-3 py-2 text-sm text-[#367654]">{{ notice }}</p>
-    <p v-if="error" role="alert" class="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{{ error }}</p>
-    <button v-if="storageBlocked" type="button" class="rounded-lg border border-red-200 px-3 py-2 text-sm text-red-800" @click="resetDamagedStorage">确认后重置损坏的活动数据</button>
+    <p v-if="notice" role="status" class="rounded-xl bg-[#EAF5ED] px-3 py-2 text-sm text-[#367654]">
+      {{ notice }}
+    </p>
+    <p v-if="error" role="alert" class="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">
+      {{ error }}
+    </p>
+    <button
+      v-if="storageBlocked"
+      type="button"
+      class="rounded-lg border border-red-200 px-3 py-2 text-sm text-red-800"
+      @click="resetDamagedStorage"
+    >
+      确认后重置损坏的活动数据
+    </button>
 
     <div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
       <div v-for="item in icons" :key="item.kind" class="rounded-xl bg-[#F1F8F2] p-3">
         <p class="text-xs text-[#7D9585]">{{ item.icon }} 今日{{ activityNames[item.kind] }}</p>
-        <p class="mt-1 text-lg font-semibold text-[#2D6D4C] tabular-nums">{{ durationText(todayStats[item.kind].durationMs) }}</p>
-        <p class="mt-1 text-xs text-[#809889]">模拟收入 ¥{{ cash(todayStats[item.kind].earned) }}</p>
+        <p class="mt-1 text-lg font-semibold text-[#2D6D4C] tabular-nums">
+          {{ durationText(todayStats[item.kind].durationMs) }}
+        </p>
+        <p class="mt-1 text-xs text-[#809889]">
+          模拟收入 ¥{{ cash(todayStats[item.kind].earned) }}
+        </p>
       </div>
     </div>
 
     <div class="flex flex-wrap items-center justify-between gap-2">
       <h4 class="text-sm font-semibold text-[#3A6E50]">最近活动记录</h4>
       <div class="flex gap-2">
-        <button type="button" class="rounded-lg border border-[#CEE5D5] px-2 py-1.5 text-xs text-[#357956] disabled:opacity-40" :disabled="!records.length" @click="exportRecords">导出备份</button>
-        <button type="button" class="rounded-lg border border-[#F1D8CF] px-2 py-1.5 text-xs text-[#A26653] disabled:opacity-40" :disabled="!records.length || Boolean(active)" @click="clearRecords">清空记录</button>
+        <button
+          type="button"
+          class="rounded-lg border border-[#CEE5D5] px-2 py-1.5 text-xs text-[#357956] disabled:opacity-40"
+          :disabled="!records.length"
+          @click="exportRecords"
+        >
+          导出备份
+        </button>
+        <button
+          type="button"
+          class="rounded-lg border border-[#F1D8CF] px-2 py-1.5 text-xs text-[#A26653] disabled:opacity-40"
+          :disabled="!records.length || Boolean(active)"
+          @click="clearRecords"
+        >
+          清空记录
+        </button>
       </div>
     </div>
-    <p v-if="!recentRecords.length" class="text-sm text-[#839A8B]">还没有记录，点一下上方的图标开始吧！</p>
+    <p v-if="!recentRecords.length" class="text-sm text-[#839A8B]">
+      还没有记录，点一下上方的图标开始吧！
+    </p>
     <ul v-else class="divide-y divide-[#E4EEE6]">
-      <li v-for="item in recentRecords" :key="item.id" class="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">
+      <li
+        v-for="item in recentRecords"
+        :key="item.id"
+        class="flex flex-wrap items-center justify-between gap-2 py-2 text-sm"
+      >
         <div class="min-w-0">
           <span class="font-medium text-[#416951]">{{ activityNames[item.kind] }}</span>
-          <span class="ml-2 text-xs text-[#8A9B90]">{{ dateTime(item.startedAt) }} · {{ durationText(item.durationMs) }}</span>
+          <span class="ml-2 text-xs text-[#8A9B90]"
+            >{{ dateTime(item.startedAt) }} · {{ durationText(item.durationMs) }}</span
+          >
         </div>
         <span class="font-semibold text-[#287A55] tabular-nums">¥{{ cash(item.earned) }}</span>
       </li>
     </ul>
-    <p class="text-xs leading-5 text-[#879C8B]">以上活动收入是今日基本工资中的一部分，不额外加到总工资。午休或下班时自动结束活动；非工作时间的学习只记录时长。请勿在多人共用的浏览器里保存私人薪资数据。</p>
+    <p class="text-xs leading-5 text-[#879C8B]">
+      以上活动收入是今日基本工资中的一部分，不额外加到总工资。午休或下班时自动结束活动；非工作时间的学习只记录时长。请勿在多人共用的浏览器里保存私人薪资数据。
+    </p>
   </section>
 
-  <div v-if="receipt" class="fixed inset-0 z-50 flex items-center justify-center bg-[#1B3528]/40 p-4" @click.self="dismiss">
-    <div role="dialog" aria-modal="true" aria-labelledby="receipt-title" class="max-h-[90dvh] w-full max-w-sm overflow-y-auto rounded-3xl border border-[#D6EADD] bg-[#FBFFFC] p-5 shadow-2xl sm:p-6">
+  <div
+    v-if="receipt"
+    class="fixed inset-0 z-50 flex items-center justify-center bg-[#1B3528]/40 p-4"
+    @click.self="dismiss"
+  >
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="receipt-title"
+      class="max-h-[90dvh] w-full max-w-sm overflow-y-auto rounded-3xl border border-[#D6EADD] bg-[#FBFFFC] p-5 shadow-2xl sm:p-6"
+    >
       <h3 id="receipt-title" class="text-lg font-bold text-[#2A6B4B]">{{ receiptMessage }}</h3>
-      <p class="mt-3 text-sm text-[#728B7A]">{{ activityNames[receipt.kind] }}完成！本次记录已保存在当前浏览器。</p>
+      <p class="mt-3 text-sm text-[#728B7A]">
+        {{ activityNames[receipt.kind] }}完成！本次记录已保存在当前浏览器。
+      </p>
       <div class="mt-4 grid grid-cols-2 gap-3">
-        <div class="rounded-xl bg-[#EAF5EE] p-3"><p class="text-xs text-[#769081]">本次时长</p><p class="mt-2 text-base font-bold text-[#2A684A]">{{ durationText(receipt.durationMs) }}</p></div>
-        <div class="rounded-xl bg-[#FFF2E4] p-3"><p class="text-xs text-[#917858]">对应模拟收入</p><p class="mt-2 text-base font-bold text-[#987344] tabular-nums">¥{{ cash(receipt.earned) }}</p></div>
+        <div class="rounded-xl bg-[#EAF5EE] p-3">
+          <p class="text-xs text-[#769081]">本次时长</p>
+          <p class="mt-2 text-base font-bold text-[#2A684A]">
+            {{ durationText(receipt.durationMs) }}
+          </p>
+        </div>
+        <div class="rounded-xl bg-[#FFF2E4] p-3">
+          <p class="text-xs text-[#917858]">对应模拟收入</p>
+          <p class="mt-2 text-base font-bold text-[#987344] tabular-nums">
+            ¥{{ cash(receipt.earned) }}
+          </p>
+        </div>
       </div>
-      <p class="mt-3 text-xs leading-5 text-[#829788]">活动收入属于正常工资的一部分，不会重复加钱。若发生在非计薪时段，收入可能为 ¥0.00。</p>
-      <button type="button" class="mt-5 min-h-11 w-full rounded-xl bg-[#297A5B] px-4 py-2.5 font-semibold text-white hover:bg-[#206447]" autofocus @click="dismiss">收下奖励，继续打工</button>
+      <p class="mt-3 text-xs leading-5 text-[#829788]">
+        活动收入属于正常工资的一部分，不会重复加钱。若发生在非计薪时段，收入可能为 ¥0.00。
+      </p>
+      <button
+        type="button"
+        class="mt-5 min-h-11 w-full rounded-xl bg-[#297A5B] px-4 py-2.5 font-semibold text-white hover:bg-[#206447]"
+        autofocus
+        @click="dismiss"
+      >
+        收下奖励，继续打工
+      </button>
     </div>
   </div>
 </template>
