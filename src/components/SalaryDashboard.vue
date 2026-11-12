@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { getSalarySnapshot } from '../utils/salaryEngine'
+import ActivityPanel from './ActivityPanel.vue'
+import type { ActivityKind } from '../utils/activityEngine'
 import type { PaySettings, AutoWorkStatus } from '../utils/salaryEngine'
 
 const props = defineProps<{ settings: PaySettings }>()
@@ -36,6 +38,15 @@ onUnmounted(() => {
 })
 
 const snapshot = computed(() => getSalarySnapshot(props.settings, now.value))
+const activeKind = ref<ActivityKind | null>(null)
+const manualNames: Record<ActivityKind, string> = {
+  toilet: '带薪拉屎中', fish: '带薪摸鱼中', study: '学习中',
+}
+const manualEmojis: Record<ActivityKind, string> = {
+  toilet: '🚽', fish: '🐟', study: '📖',
+}
+const displayStatus = computed(() => activeKind.value ? manualNames[activeKind.value] : snapshot.value.statusText)
+const displayEmoji = computed(() => activeKind.value ? manualEmojis[activeKind.value] : statusEmoji[snapshot.value.status])
 const statusEmoji: Record<AutoWorkStatus, string> = {
   before: '☀️', work: '💼', lunch: '🍱', sprint: '🏃', off: '🌙', rest: '🌿',
 }
@@ -64,8 +75,8 @@ const displayHours = (ms: number) => `${(ms / 3_600_000).toFixed(2)} 小时`
     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div class="min-w-0">
         <div class="inline-flex items-center gap-2 rounded-full bg-[#E1F2E8] px-3 py-1.5 text-xs font-semibold text-[#287A55]">
-          <span aria-hidden="true">{{ statusEmoji[snapshot.status] }}</span>
-          <span>{{ snapshot.statusText }}</span>
+          <span aria-hidden="true">{{ displayEmoji }}</span>
+          <span>{{ displayStatus }}</span>
           <span v-if="snapshot.status === 'lunch'" class="font-normal">{{ settings.lunchPaid ? '· 带薪' : '· 暂停计薪' }}</span>
         </div>
         <h2 class="mt-3 text-xl font-bold sm:text-2xl">今日工资模拟 · 每分钟更新</h2>
@@ -102,6 +113,8 @@ const displayHours = (ms: number) => `${(ms / 3_600_000).toFixed(2)} 小时`
       </div>
     </section>
 
+    <ActivityPanel :settings="settings" :clock="now" @active-change="activeKind = $event" />
+
     <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
       <div class="min-w-0 rounded-2xl border border-[#E1ECE3] bg-white p-4">
         <p class="text-sm text-[#718C7C]">今日基本工资</p>
@@ -134,7 +147,7 @@ const displayHours = (ms: number) => `${(ms / 3_600_000).toFixed(2)} 小时`
     </div>
 
     <div class="rounded-xl bg-[#FFF4E7] px-4 py-3 text-xs leading-6 text-[#8E6D3B]">
-      📌 这是依据设备本地日期、工作日和作息计算的工资模拟，并非真实到账。暂未接入加班计时、手动活动记录、跨午夜排班和法定节假日调休。完成相关功能前，加班收入始终显示为 0，不能当作真实工资单。
+      📌 这是依据设备本地日期、工作日和作息计算的工资模拟，并非真实到账。手动厕所、摸鱼、学习记录已接入；暂未接入加班计时、跨午夜排班和法定节假日调休。完成相关功能前，加班收入始终显示为 0，不能当作真实工资单。
     </div>
   </div>
 </template>

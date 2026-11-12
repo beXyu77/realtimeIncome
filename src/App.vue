@@ -528,7 +528,7 @@ function editSettings() {
         </template>
       </section>
       <p class="mt-5 text-center text-xs leading-5 text-[#81988A]">
-        🐟 V1.1.1 分钟刷新版 · 本地优先 · 本页面未接入账号、广告或分析脚本
+        🐟 V1.2 趣味活动版 · 本地优先 · 本页面未接入账号、广告或分析脚本
       </p>
     </div>
   </main>
