@@ -1,48 +1,48 @@
-# vue-project
+# 🐟 带薪摸鱼模拟器 V1.2 · 趣味活动系统
 
-This template should help get you started developing with Vue 3 in Vite.
+本补丁**直接覆盖 V1.1.1（按分钟刷新版）**，不是全新 Vue 项目。保留现有工资设置 `paid-fishing:pay-settings:v1`，无需安装新插件或修改 package.json。
 
-## Recommended IDE Setup
+## 本次实现
 
-[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+- 🚽 厕所 / 🐟 摸鱼 / 📖 学习：图标按钮（无文字），点击启动，界面出现明确的「结束厕所 / 结束摸鱼 / 结束学习」按钮。
+- 手动点击结束：弹出恭喜文案、精确到秒的活动时长、对应模拟收入；确认后关闭结算弹窗。
+- 一次只允许一项手动活动，避免重叠统计。
+- 今日三项活动时长与收入汇总，最近6条活动记录。
+- 活动记录仅保存到当前浏览器 LocalStorage：`paid-fishing:activities:v1`；工资设置仍保留旧键。
+- 刷新后可恢复尚未结束的活动；跨午休、下班、其他时间边界自动结算，避免忘记关闭而无限计时。
+- 非工作时段不能开始带薪上厕所/摸鱼；可以启动学习，但非计薪时段学习对应收入为0。
+- 提供活动记录 JSON 导出、二次确认后清空功能。
+- **工资主面板继续每分钟更新**；活动结算使用实际时间戳和 V1.1.1 工资引擎计算到秒。
+- 活动收入属于基本工资的一部分，不会额外加到总工资。
 
-## Recommended Browser Setup
+## 安装到你已经能运行的项目
 
-- Chromium-based browsers (Chrome, Edge, Brave, etc.):
-  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd)
-  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
-- Firefox:
-  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
-  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
+1. 请先备份原项目中的 `src/App.vue`、`src/components/SalaryDashboard.vue`、`src/utils/salaryEngine.ts` 到项目外部文件夹。
+2. 解压 ZIP。把压缩包内部 `src/` 的所有文件及子文件夹复制到你的 `paid-fishing/src/`，出现同名文件时选择覆盖。新增文件会自动放到正确目录。
+3. **不要**替换你的 `package.json`、`vite.config.ts`、`src/assets/main.css`、原有 `docs/PRD.md`。
+4. 在 VS Code 终端（项目根目录）运行 `npm run type-check`。若原项目无该脚本，可运行 `npx vue-tsc --noEmit`；再运行 `npm run dev`。
+5. 浏览器打开 `http://localhost:5173/`。如果工资设置已经保存，直接进入工作台，下方出现「趣味活动」区域。
 
-## Type Support for `.vue` Imports in TS
+## 验收操作
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
+1. 使用一个设置为**当前时刻是工作时间**的工作日账号（如果此刻午休、下班或休息日，厕所/摸鱼按钮会禁止开始；可以先测试学习功能）。
+2. 点击 🚽，看到「带薪拉屎中」、已持续分钟和「结束厕所」按钮。结束后应弹出随机恭喜卡片，并生成一条记录。
+3. 试 🐟 和 📖，检查记录数量。当前学习可在下班或午休时间启动，但那段时间不计收入。
+4. 点击开始，刷新页面；活动应恢复，再点击结束后结算一次。
+5. 观察顶部工资金额和倒计时仍每分钟变动，而不是每秒变动。
+6. 导出记录为 JSON 文件，再尝试「清空记录」。页面必须先请求确认；**工资设置不受影响**。
+7. 收窄浏览器窗口到手机宽度，卡片和按钮不应横向溢出。
 
-## Customize configuration
+## 重要规则和已知范围
 
-See [Vite Configuration Reference](https://vite.dev/config/).
+- 正式的 400×100px Tauri 悬浮组件 **尚未制作**；当前是独立完整版网页版的活动区。
+- 加班计时、带薪开会、成就系统、系统通知将在后续阶段逐步接入。当前加班工资仍为0。
+- V1.2 暂不支持跨午夜班次、法定节假日与调休表。
+- 薪资设置修改时，已经开始的活动继续按「启动时的工资规则」结算，以免历史收入被新设置追溯重算。建议先结束活动再修改工资设置。
+- 不使用任何网络上传、第三方埋点或新依赖。浏览器 LocalStorage **不加密**，共用电脑请谨慎使用。
+- 如果本地记录损坏，软件不会自动覆盖旧记录。请备份后再通过确认按钮重置活动记录。
+- 请不要在多个标签页中同时操作活动计时，以免发生本地存储竞争。
 
-## Project Setup
+## 技术检查说明
 
-```sh
-npm install
-```
-
-### Compile and Hot-Reload for Development
-
-```sh
-npm run dev
-```
-
-### Type-Check, Compile and Minify for Production
-
-```sh
-npm run build
-```
-
-### Lint with [ESLint](https://eslint.org/)
-
-```sh
-npm run lint
-```
+已在隔离环境对纯 TypeScript 工资/活动引擎执行严格类型检查和14项边界逻辑测试，并对新 Vue 组件的 `<script setup>` 运行 TypeScript 语法/类型检查（使用轻量类型桩）。由于环境无法连接 npm registry，**无法在此环境执行真实 Vue/Vite 完整构建**，需要在你的电脑按上面命令运行 `vue-tsc` / Vite 并验证实际页面。

@@ -77,7 +77,7 @@ const dailyPay = computed(() => {
 const hourlyPay = computed(() =>
   paidMinutes.value ? (dailyPay.value * 60) / paidMinutes.value : 0,
 )
-const secondPay = computed(() => hourlyPay.value / 3600)
+const minutePay = computed(() => hourlyPay.value / 60)
 const money = (value: number, digits = 2) => (Number.isFinite(value) ? value.toFixed(digits) : '—')
 
 function toggleWeekday(day: number) {
@@ -263,7 +263,7 @@ function editSettings() {
         </div>
         <div>
           <h1 class="text-xl font-bold tracking-tight sm:text-2xl">带薪摸鱼</h1>
-          <p class="text-xs text-[#6B8B78] sm:text-sm">上班的每一秒，都在悄悄发财 🌱</p>
+          <p class="text-xs text-[#6B8B78] sm:text-sm">上班的每一分钟，都在悄悄发财 🌱</p>
         </div>
       </header>
 
@@ -406,7 +406,7 @@ function editSettings() {
               午休也计薪</label
             >
             <p class="text-xs leading-5 text-[#7F9687]">
-              默认午休不计薪；如果勾选，月薪每日总额不变，但每秒分配金额会变化。暂不支持跨午夜排班。
+              默认午休不计薪；如果勾选，月薪每日总额不变，但每分钟分配金额会变化。暂不支持跨午夜排班。
             </p>
           </div>
 
@@ -474,9 +474,9 @@ function editSettings() {
                 </p>
               </div>
               <div class="rounded-2xl bg-[#F1F9F3] p-4">
-                <p class="text-sm text-[#6E8979]">每秒模拟基本工资</p>
+                <p class="text-sm text-[#6E8979]">每分钟模拟基本工资</p>
                 <p class="mt-2 text-2xl font-bold tabular-nums text-[#297A5B]">
-                  ¥ {{ money(secondPay, 5) }}
+                  ¥ {{ money(minutePay, 4) }}
                 </p>
               </div>
             </div>
@@ -528,7 +528,7 @@ function editSettings() {
         </template>
       </section>
       <p class="mt-5 text-center text-xs leading-5 text-[#81988A]">
-        🐟 V1.1 实时工资测试阶段 · 本地优先 · 本页面未接入账号、广告或分析脚本
+        🐟 V1.1.1 分钟刷新版 · 本地优先 · 本页面未接入账号、广告或分析脚本
       </p>
     </div>
   </main>

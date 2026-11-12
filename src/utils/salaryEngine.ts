@@ -149,7 +149,7 @@ export function getSalarySnapshot(settings: PaySettings, now: Date): SalarySnaps
   } else if (current < end) {
     status = 'work'
     statusText = '工作中'
-    message = '💰 你的每一秒都在悄悄变成工资。'
+    message = '💰 你的每一分钟都在悄悄变成工资。'
     countdownText = '距离下班'
     countdownTarget = end
   } else {
