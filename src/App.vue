@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import SalaryDashboard from './components/SalaryDashboard.vue'
+import PrivacyClock from './components/PrivacyClock.vue'
 import type { PaySettings } from './utils/salaryEngine'
 
 type SalaryMode = 'monthly' | 'hourly'
@@ -34,6 +35,48 @@ const step = ref(1)
 const completed = ref(false)
 const savedSettings = ref<PaySettings | null>(null)
 const error = ref('')
+
+// 隐私视图属于当前浏览器标签页，不改动任何薪资或活动记录。
+// sessionStorage 支持刷新保留；无法使用时仅本次页面切换有效，并给出提示。
+const PRIVACY_KEY = 'paid-fishing:privacy-view:v1'
+function readPrivacyView(): { enabled: boolean; available: boolean } {
+  if (typeof window === 'undefined') return { enabled: false, available: false }
+  try {
+    return { enabled: sessionStorage.getItem(PRIVACY_KEY) === '1', available: true }
+  } catch {
+    return { enabled: false, available: false }
+  }
+}
+const initialPrivacy = readPrivacyView()
+const privacyMode = ref(initialPrivacy.enabled)
+const privacyStorageAvailable = ref(initialPrivacy.available)
+
+function togglePrivacy() {
+  const next = !privacyMode.value
+  // 页面立即切换，不等持久化成功。失败时隐私时钟会明确提示刷新风险。
+  privacyMode.value = next
+  try {
+    sessionStorage.setItem(PRIVACY_KEY, next ? '1' : '0')
+    privacyStorageAvailable.value = true
+  } catch {
+    privacyStorageAvailable.value = false
+  }
+}
+
+function handlePrivacyKeydown(event: KeyboardEvent) {
+  // 页面获得焦点时可用；不是操作系统级热键。
+  if (event.repeat || !event.altKey || !event.shiftKey || event.ctrlKey || event.metaKey) return
+  if (event.code !== 'KeyH') return
+  event.preventDefault()
+  togglePrivacy()
+}
+
+watch(privacyMode, (hidden) => {
+  if (typeof document !== 'undefined') document.title = hidden ? '时间与日程' : '带薪摸鱼'
+}, { immediate: true })
+
+onMounted(() => window.addEventListener('keydown', handlePrivacyKeydown))
+onUnmounted(() => window.removeEventListener('keydown', handlePrivacyKeydown))
 
 function toMinutes(time: string): number {
   // 严格校验 24 小时制时间，非法输入返回 NaN。
@@ -217,15 +260,31 @@ function editSettings() {
 <template>
   <main class="min-h-screen bg-[#F5FAF5] px-4 py-8 text-[#264E3B] sm:px-6 sm:py-12">
     <div class="mx-auto w-full max-w-2xl">
-      <header class="mb-7 flex items-center gap-3">
+      <!-- 隐私模式使用独立的中性时钟界面，不渲染工资/活动/提醒 DOM。 -->
+      <PrivacyClock
+        v-if="privacyMode"
+        :storage-available="privacyStorageAvailable"
+        @exit="togglePrivacy"
+      />
+
+      <header v-if="!privacyMode" class="mb-7 flex flex-wrap items-center gap-3">
         <div class="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-[#DFEFE4] text-2xl" aria-hidden="true">🐟</div>
-        <div>
+        <div class="min-w-0 flex-1">
           <h1 class="text-xl font-bold tracking-tight sm:text-2xl">带薪摸鱼</h1>
           <p class="text-xs text-[#6B8B78] sm:text-sm">上班的每一分钟，都在悄悄发财 🌱</p>
         </div>
+        <button
+          type="button"
+          aria-label="进入时钟隐私视图"
+          title="切换为时钟（当前网页可尝试 Alt+Shift+H）"
+          class="min-h-11 shrink-0 rounded-xl border border-[#D5E6D9] bg-white px-3 py-2 text-sm font-semibold text-[#347756] transition hover:bg-[#F2F8F2] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#297A5B]"
+          @click="togglePrivacy"
+        >
+          ◷ 时钟模式
+        </button>
       </header>
 
-      <section class="rounded-3xl border border-[#DCEBDD] bg-white p-5 shadow-[0_12px_50px_rgba(40,110,70,.06)] sm:p-8">
+      <section v-if="!privacyMode" class="rounded-3xl border border-[#DCEBDD] bg-white p-5 shadow-[0_12px_50px_rgba(40,110,70,.06)] sm:p-8">
         <template v-if="completed && savedSettings">
           <SalaryDashboard :settings="savedSettings" @edit="editSettings" />
         </template>
@@ -315,7 +374,7 @@ function editSettings() {
           </div>
         </template>
       </section>
-      <p class="mt-5 text-center text-xs leading-5 text-[#81988A]">🐟 V1.3 午休提醒与下班结算版 · 本地优先 · 未接入账号、广告或分析脚本</p>
+      <p v-if="!privacyMode" class="mt-5 text-center text-xs leading-5 text-[#81988A]">🐟 V1.4 隐私时钟版 · 本地优先 · 未接入账号、广告或分析脚本</p>
     </div>
   </main>
 </template>
