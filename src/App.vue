@@ -259,7 +259,7 @@ function editSettings() {
 
 <template>
   <main class="min-h-screen bg-[#F5FAF5] px-4 py-8 text-[#264E3B] sm:px-6 sm:py-12">
-    <div class="mx-auto w-full max-w-2xl">
+    <div class="mx-auto w-full" :class="completed && savedSettings && !privacyMode ? 'max-w-6xl' : 'max-w-2xl'">
       <!-- 隐私模式使用独立的中性时钟界面，不渲染工资/活动/提醒 DOM。 -->
       <PrivacyClock
         v-if="privacyMode"
@@ -284,7 +284,7 @@ function editSettings() {
         </button>
       </header>
 
-      <section v-if="!privacyMode" class="rounded-3xl border border-[#DCEBDD] bg-white p-5 shadow-[0_12px_50px_rgba(40,110,70,.06)] sm:p-8">
+      <section v-if="!privacyMode" :class="completed && savedSettings ? 'rounded-3xl border-0 bg-transparent p-0 shadow-none' : 'rounded-3xl border border-[#DCEBDD] bg-white p-5 shadow-[0_12px_50px_rgba(40,110,70,.06)] sm:p-8'">
         <template v-if="completed && savedSettings">
           <SalaryDashboard :settings="savedSettings" @edit="editSettings" />
         </template>
@@ -374,7 +374,7 @@ function editSettings() {
           </div>
         </template>
       </section>
-      <p v-if="!privacyMode" class="mt-5 text-center text-xs leading-5 text-[#81988A]">🐟 V1.4 隐私时钟版 · 本地优先 · 未接入账号、广告或分析脚本</p>
+      <p v-if="!privacyMode" class="mt-5 text-center text-xs leading-5 text-[#81988A]">🐟 V1.6 工作台与统计 · 本地优先 · 未接入账号、广告或分析脚本</p>
     </div>
   </main>
 </template>
