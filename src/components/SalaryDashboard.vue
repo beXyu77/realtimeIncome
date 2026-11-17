@@ -5,7 +5,10 @@ import ActivityPanel from './ActivityPanel.vue'
 import AchievementsPanel from './AchievementsPanel.vue'
 import SchedulePanel from './SchedulePanel.vue'
 import ActivityStats from './ActivityStats.vue'
+import OvertimePanel from './OvertimePanel.vue'
 import type { ActivityRecord, ActivityKind } from '../utils/activityEngine'
+import { todayOvertimeEarned } from '../utils/overtimeEngine'
+import type { OvertimeRecord, ActiveOvertime } from '../utils/overtimeEngine'
 import type { PaySettings, AutoWorkStatus } from '../utils/salaryEngine'
 
 const props = defineProps<{ settings: PaySettings }>()
@@ -45,7 +48,21 @@ onUnmounted(() => {
   document.removeEventListener('visibilitychange', onVisibilityChange)
 })
 
-const snapshot = computed(() => getSalarySnapshot(props.settings, now.value))
+// V1.7: 基本工资仍来自原引擎；加班收入来自独立手动记录。
+// 主面板、下班结算均使用合并快照，禁止把趣味活动工资重复相加。
+const overtimeRecords = ref<OvertimeRecord[]>([])
+const activeOvertime = ref<ActiveOvertime | null>(null)
+function onOvertimeChange(items: OvertimeRecord[], current: ActiveOvertime | null) {
+  overtimeRecords.value = items
+  activeOvertime.value = current
+}
+const baseSnapshot = computed(() => getSalarySnapshot(props.settings, now.value))
+const overtimeToday = computed(() => todayOvertimeEarned(overtimeRecords.value, activeOvertime.value, now.value))
+const snapshot = computed(() => ({
+  ...baseSnapshot.value,
+  overtimeEarned: overtimeToday.value,
+  totalEarned: baseSnapshot.value.baseEarned + overtimeToday.value,
+}))
 const activeKind = ref<ActivityKind | null>(null)
 const activityRecords = ref<ActivityRecord[]>([])
 const activityRecordsReady = ref(false)
@@ -75,6 +92,17 @@ function formatCountdownMinutes(milliseconds: number): string {
 }
 const displayHours = (ms: number) => `${(ms / 3_600_000).toFixed(2)} 小时`
 const workingDays = computed(() => props.settings.weekdays.map((d) => `周${['', '一', '二', '三', '四', '五', '六', '日'][d] ?? d}`).join('、'))
+function requestSettingsEdit() {
+  if (activeOvertime.value) {
+    window.alert('请先结束正在记录的加班，再修改工资或工作时间，以免产生重复计薪。')
+    return
+  }
+  if (activeKind.value) {
+    window.alert('请先结束正在记录的厕所、摸鱼或学习活动，再修改工资或工作时间。')
+    return
+  }
+  emit('edit')
+}
 const overtimeLabel = computed(() => {
   const s = props.settings
   if (s.overtimeType === 'none') return '没有额外加班费'
@@ -108,6 +136,7 @@ const overtimeLabel = computed(() => {
           <span>{{ displayStatus }}</span>
           <span v-if="snapshot.status === 'lunch'" class="font-normal">{{ settings.lunchPaid ? '· 带薪' : '· 暂停计薪' }}</span>
         </div>
+        <span v-if="activeOvertime" class="rounded-full bg-[#FFF0DF] px-3 py-1 text-xs font-semibold text-[#9A6A3D]">🌙 加班记录中</span>
         <p class="text-xs text-[#809789]">{{ todayText }} · {{ currentTime }}</p>
       </div>
 
@@ -118,7 +147,7 @@ const overtimeLabel = computed(() => {
             <h2 class="text-xl font-bold text-[#264E3B] sm:text-2xl">今日工作台 🌿</h2>
             <p class="mt-1 text-sm text-[#738D7B]">安静记录每一分钟，也收获一点快乐。</p>
           </div>
-          <button type="button" class="min-h-11 rounded-xl border border-[#D5E6D9] bg-white px-4 py-2 text-sm font-semibold text-[#347756] hover:bg-[#F2F8F2] focus-visible:outline-2 focus-visible:outline-[#297A5B]" @click="emit('edit')">
+          <button type="button" class="min-h-11 rounded-xl border border-[#D5E6D9] bg-white px-4 py-2 text-sm font-semibold text-[#347756] hover:bg-[#F2F8F2] focus-visible:outline-2 focus-visible:outline-[#297A5B]" @click="requestSettingsEdit">
             修改工资与作息
           </button>
         </div>
@@ -152,7 +181,7 @@ const overtimeLabel = computed(() => {
           <div class="min-w-0 rounded-2xl border border-[#E1ECE3] bg-white p-4">
             <p class="text-sm text-[#718C7C]">今日加班工资</p>
             <p class="mt-2 break-all text-xl font-bold tabular-nums text-[#315B44]">¥{{ displayMoney(snapshot.overtimeEarned) }}</p>
-            <p class="mt-1 text-xs text-[#91A698]">尚未接入加班计时</p>
+            <p class="mt-1 text-xs text-[#91A698]">手动记录的已结算与进行中收入</p>
           </div>
           <div class="min-w-0 rounded-2xl border border-[#E1ECE3] bg-white p-4">
             <p class="text-sm text-[#718C7C]">今日模拟合计</p>
@@ -181,11 +210,16 @@ const overtimeLabel = computed(() => {
         <ActivityPanel :settings="settings" :clock="now" @active-change="activeKind = $event" @records-change="handleRecordsChange" />
       </div>
 
-      <div v-show="page === 'overview'" class="rounded-xl bg-[#FFF4E7] px-4 py-3 text-xs leading-6 text-[#8E6D3B]">
-        📌 工资是根据本地作息计算的模拟值，不是真实到账。活动收入是基本工资的一部分，不能额外累加；加班计时与节假日调休尚未实现。
+      <!-- V1.7 独立加班组件持续挂载：切换统计页面不重置计时。 -->
+      <div v-show="page === 'overview'" class="min-w-0">
+        <OvertimePanel :settings="settings" :clock="now" @change="onOvertimeChange" />
       </div>
 
-      <ActivityStats v-if="activityRecordsReady" v-show="page === 'statistics'" :records="activityRecords" :clock="now" />
+      <div v-show="page === 'overview'" class="rounded-xl bg-[#FFF4E7] px-4 py-3 text-xs leading-6 text-[#8E6D3B]">
+        📌 工资是根据本地作息计算的模拟值，不是真实到账。活动收入是基本工资的一部分，不能额外累加；仅手动记录的非正常计薪时段加班工资会单独累计。节假日调休暂未实现。
+      </div>
+
+      <ActivityStats v-if="activityRecordsReady" v-show="page === 'statistics'" :records="activityRecords" :overtime-records="overtimeRecords" :clock="now" />
       <p v-else-if="page === 'statistics'" class="rounded-xl bg-white p-5 text-sm text-[#758E7E]">正在读取本地活动记录…</p>
 
       <!-- 成就在第一次合法记录加载后挂载；进入/退出页面不会触发历史成就弹窗。 -->
@@ -218,7 +252,7 @@ const overtimeLabel = computed(() => {
             <div class="flex flex-wrap justify-between gap-2"><dt class="text-[#748D7C]">下午</dt><dd class="text-right text-[#315D45]">{{ settings.afternoonStart }} – {{ settings.afternoonEnd }}</dd></div>
           </dl>
         </div>
-        <button type="button" class="min-h-11 w-full rounded-xl bg-[#297A5B] px-5 py-3 font-semibold text-white hover:bg-[#216448] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#297A5B]" @click="emit('edit')">修改工资与作息</button>
+        <button type="button" class="min-h-11 w-full rounded-xl bg-[#297A5B] px-5 py-3 font-semibold text-white hover:bg-[#216448] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#297A5B]" @click="requestSettingsEdit">修改工资与作息</button>
         <p class="rounded-xl bg-[#F1F8F2] px-4 py-3 text-xs leading-6 text-[#768F7D]">默认只保存在当前浏览器本地；不是加密存储。如果需要导出或清空活动记录，请返回工作台的「趣味活动」区域操作。修改薪资后旧活动收入不会追溯重算。</p>
       </section>
     </div>

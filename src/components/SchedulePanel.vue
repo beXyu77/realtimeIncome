@@ -176,7 +176,7 @@ watch(() => props.settings, () => { banner.value = null; checkEvent() })
             <p class="mt-1 text-xl font-bold tabular-nums text-[#287957]">¥{{ money(snapshot.totalEarned) }}</p>
           </div>
         </div>
-        <p class="text-xs text-[#819487]">加班工资 ¥{{ money(snapshot.overtimeEarned) }}（加班计时尚未接入，本版不自动计算）。</p>
+        <p class="text-xs text-[#819487]">加班工资 ¥{{ money(snapshot.overtimeEarned) }}（来自已记录及正在进行的手动加班；不会重复计入基本工资）。</p>
         <div class="space-y-2 text-xs text-[#557363]">
           <p>🚽 厕所：{{ durationText(todaySummary.toilet.duration) }} · 对应收入 ¥{{ money(todaySummary.toilet.earned) }}</p>
           <p>🐟 摸鱼：{{ durationText(todaySummary.fish.duration) }} · 对应收入 ¥{{ money(todaySummary.fish.earned) }}</p>

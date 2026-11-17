@@ -349,7 +349,7 @@ function editSettings() {
             <label class="block text-sm font-medium">每月发薪日
               <input v-model="form.payday" type="number" min="1" max="31" step="1" class="mt-2 min-h-11 w-full rounded-xl border border-[#D8E8DC] px-3" />
             </label>
-            <p class="rounded-xl bg-[#FFF4E7] p-3 text-xs leading-5 text-[#977244]">加班规则会保存，但本阶段尚未提供加班计时，已累计加班收入暂显示 0。遇到没有31日的月份，发薪提醒逻辑会另行处理。</p>
+            <p class="rounded-xl bg-[#FFF4E7] p-3 text-xs leading-5 text-[#977244]">加班规则会保存。完成初始化后，可在工作台手动记录非正常计薪时段的加班。遇到没有31日的月份，发薪提醒逻辑会另行处理。</p>
           </div>
 
           <div v-else class="mt-7 space-y-5">
@@ -374,7 +374,7 @@ function editSettings() {
           </div>
         </template>
       </section>
-      <p v-if="!privacyMode" class="mt-5 text-center text-xs leading-5 text-[#81988A]">🐟 V1.6 工作台与统计 · 本地优先 · 未接入账号、广告或分析脚本</p>
+      <p v-if="!privacyMode" class="mt-5 text-center text-xs leading-5 text-[#81988A]">🐟 V1.7 加班计时 · 本地优先 · 未接入账号、广告或分析脚本</p>
     </div>
   </main>
 </template>

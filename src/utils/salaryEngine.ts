@@ -1,7 +1,7 @@
 /**
  * 带薪摸鱼 V1.1 —— 纯函数实时基本工资引擎。
  * 不读写网络、浏览器存储或其他外部资源，所有时间均按设备本地时间解释。
- * 加班在本阶段尚未实现：保留设置、合计展示为「基本工资 + 0」但明确标注未计入。
+ * 纯基本工资引擎，不计算手动加班；V1.7 工作台用独立加班引擎叠加额外收入。
  */
 export type SalaryMode = 'monthly' | 'hourly'
 export type SalaryBasis = 'gross' | 'net'
@@ -35,7 +35,7 @@ export type SalarySnapshot = {
   countdownMs: number
   dailyBasePay: number
   baseEarned: number
-  overtimeEarned: number // 尚未启用加班计时；本阶段始终为 0
+  overtimeEarned: number // 基础快照恒为 0；工作台使用独立加班记录覆盖此字段
   totalEarned: number
   paidElapsedMs: number
   paidTotalMs: number
@@ -164,7 +164,7 @@ export function getSalarySnapshot(settings: PaySettings, now: Date): SalarySnaps
     (settings.lunchPaid || current < lunchStart || current >= lunchEnd)
   const baseRatePerSecond = plannedMs > 0 ? dailyBasePay / (plannedMs / 1000) : 0
   const safeBase = Math.min(dailyBasePay, Math.max(0, baseEarned))
-  const overtimeEarned = 0 // 后续加入手动加班记录后再计算；避免把下班时间自动认作加班。
+  const overtimeEarned = 0 // 此引擎只返回基本工资；加班由工作台独立合并。
 
   return {
     status,
