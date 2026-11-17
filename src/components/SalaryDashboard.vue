@@ -2,6 +2,7 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { getSalarySnapshot } from '../utils/salaryEngine'
 import ActivityPanel from './ActivityPanel.vue'
+import AchievementsPanel from './AchievementsPanel.vue'
 import SchedulePanel from './SchedulePanel.vue'
 import type { ActivityRecord } from '../utils/activityEngine'
 import type { ActivityKind } from '../utils/activityEngine'
@@ -42,6 +43,12 @@ onUnmounted(() => {
 const snapshot = computed(() => getSalarySnapshot(props.settings, now.value))
 const activeKind = ref<ActivityKind | null>(null)
 const activityRecords = ref<ActivityRecord[]>([])
+const activityRecordsReady = ref(false)
+
+function handleRecordsChange(items: ActivityRecord[]) {
+  activityRecords.value = items
+  activityRecordsReady.value = true
+}
 const manualNames: Record<ActivityKind, string> = {
   toilet: '带薪拉屎中', fish: '带薪摸鱼中', study: '学习中',
 }
@@ -118,7 +125,10 @@ const displayHours = (ms: number) => `${(ms / 3_600_000).toFixed(2)} 小时`
 
     <SchedulePanel :settings="settings" :clock="now" :snapshot="snapshot" :records="activityRecords" />
 
-    <ActivityPanel :settings="settings" :clock="now" @active-change="activeKind = $event" @records-change="activityRecords = $event" />
+    <ActivityPanel :settings="settings" :clock="now" @active-change="activeKind = $event" @records-change="handleRecordsChange" />
+
+    <!-- 仅在活动记录首次完成加载后挂载，避免旧历史成就重新弹通知。 -->
+    <AchievementsPanel v-if="activityRecordsReady" :records="activityRecords" />
 
     <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
       <div class="min-w-0 rounded-2xl border border-[#E1ECE3] bg-white p-4">
